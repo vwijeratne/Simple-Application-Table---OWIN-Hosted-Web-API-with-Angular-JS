@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="en" ng-app="studentApp">
+<head>
+    <meta charset="utf-8" />
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <title></title>
+</head>
+<body>
+
+    <div ng-controller="StudentListController as vm">
+        <h1>{{ vm.title }}</h1>
+        <table class="table table-bordered table-striped table-responsive">
+            <tr>
+                <th>Student Name</th>
+                <th>Student Age</th>
+            </tr>
+            <tr ng-repeat="student in vm.listOfStudents">
+                <td>{{student.Name}}</td>
+                <td>{{student.Age}}</td>
+            </tr>            
+        </table>
+    </div>
+    
+    <script src="Scripts/jquery-3.1.1.min.js"></script>
+    <script src="Scripts/bootstrap.js"></script>
+    <script src="Scripts/angular.min.js"></script>
+
+    <script>
+
+        (function () {
+            var app = angular.module("studentApp", []);
+
+            app.controller("StudentListController", ["$http", StudentListController]);
+
+            function StudentListController($http) {
+                var vm = this;
+
+                vm.title = "Student List";
+
+                activate();
+
+                function activate() {
+                    $http.get("api/Student").then(function (response) {
+                        vm.listOfStudents = response.data;
+                    });
+                }
+            }
+
+
+
+        }());
+    </script>
+</body>
+</html>
