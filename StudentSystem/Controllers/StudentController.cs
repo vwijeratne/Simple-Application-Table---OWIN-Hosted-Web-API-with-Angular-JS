@@ -5,18 +5,32 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Xml.Linq;
 
 namespace StudentSystem.Controllers
 {
     public class StudentController : ApiController
     {
         public IList<Student> listOfStudents = new List<Student>();
+
         public IHttpActionResult Get()
         {
-            listOfStudents.Add(new Student() { Id = 1, Name = "One", Age = 15 });
-            listOfStudents.Add(new Student() { Id = 2, Name = "Two", Age = 20 });
-            listOfStudents.Add(new Student() { Id = 3, Name = "Three", Age = 18 });
-            listOfStudents.Add(new Student() { Id = 4, Name = "Four", Age = 17 });
+            XDocument doc = XDocument.Load("C://Students.xml");
+            foreach (XElement person in doc.Descendants("Student"))
+            {
+                Student newStudent = new Student();
+                foreach (XElement item in person.Nodes())
+                {
+                    if (item.Name.ToString().Equals("Id"))
+                        newStudent.Id = Convert.ToInt16(item.Value);
+                    else if (item.Name.ToString().Equals("Name"))
+                        newStudent.Name = item.Value;
+                    else
+                        newStudent.Age = Convert.ToInt16(item.Value);
+                }
+                listOfStudents.Add(newStudent);
+            }
+
             return Ok(listOfStudents);
         }
 
@@ -25,11 +39,33 @@ namespace StudentSystem.Controllers
         //[Route("api/Item/GetItem/{id}")]
         public IHttpActionResult GetDataById(int id)
         {
-            Student selectedStudent = listOfStudents.Where(m => m.Id == id).SingleOrDefault();
-            if (selectedStudent != null)
-                return Ok(selectedStudent);
-            else
-                return BadRequest("No Student Selected");
+            XDocument doc = XDocument.Load("C://Students.xml");
+            //var query = from c in doc.Descendants("Band") select c;
+            foreach (XElement docPerson in doc.Descendants("Id"))
+            {
+                if (Convert.ToInt16(docPerson.Value) == id)
+                {
+                    Student thisStudent = new Student();
+                    foreach (XElement node in docPerson.Parent.Nodes())
+                    {
+                        if (node.Name.ToString().Equals("Id"))
+                            thisStudent.Id = Convert.ToInt16(node.Value);
+                        else if (node.Name.ToString().Equals("Name"))
+                            thisStudent.Name = node.Value;
+                        else
+                            thisStudent.Age = Convert.ToInt16(node.Value);
+                    }
+                    return Ok(thisStudent);
+
+                }
+            }
+            return BadRequest("Student does not exist!");
+
+            //Student selectedStudent = listOfStudents.Where(m => m.Id == id).SingleOrDefault();
+            //if (selectedStudent != null)
+            //    return Ok(selectedStudent);
+            //else
+            //    return BadRequest("No Student Selected");
         }
 
 
@@ -38,15 +74,29 @@ namespace StudentSystem.Controllers
         //[Route("api/Item/DeleteItem/{id}")]
         public IHttpActionResult DeleteData([FromUri]int id)
         {
-            Student selectedMovie = listOfStudents.Where(m => m.Id == id).SingleOrDefault();
-            if (selectedMovie != null)
+            XDocument doc = XDocument.Load("C://Students.xml");
+
+            foreach (XElement docStudent in doc.Descendants("Id"))
             {
-                listOfStudents.Remove(selectedMovie);
-                return Ok(listOfStudents);
-                //listOfMovies.Add();
+                if (Convert.ToInt16(docStudent.Value) == id)
+                {
+                    docStudent.Parent.Remove();
+                    doc.Save("C://Students.xml");
+                    return Ok("Student successfully removed");
+
+                }
             }
-            else
-                return BadRequest("No Student Selected");
+            return BadRequest("Student does not exist!");
+
+            //Student selectedMovie = listOfStudents.Where(m => m.Id == id).SingleOrDefault();
+            //if (selectedMovie != null)
+            //{
+            //    listOfStudents.Remove(selectedMovie);
+            //    return Ok(listOfStudents);
+            //    //listOfMovies.Add();
+            //}
+            //else
+            //    return BadRequest("No Student Selected");
         }
 
         // Update: Item
@@ -54,15 +104,37 @@ namespace StudentSystem.Controllers
         //[HttpPut]
         public IHttpActionResult UpdateData([FromBody]Student stu)
         {
-            Student selectedStudent = listOfStudents.Where(m => m.Id == stu.Id).SingleOrDefault();
-            if (selectedStudent != null)
+            XDocument doc = XDocument.Load("C://Students.xml");
+            //var query = from c in doc.Descendants("Band") select c;
+            foreach (XElement docPerson in doc.Descendants("Id"))
             {
-                selectedStudent.Name = stu.Name;
-                selectedStudent.Age = stu.Age;
-                //listOfMovies.Remove(selectedMovie);
-                //listOfMovies.Add();
+                if (Convert.ToInt16(docPerson.Value) == stu.Id)
+                {
+                    foreach (XElement node in docPerson.Parent.Nodes())
+                    {
+                        if (node.Name.ToString().Equals("Id"))
+                            node.SetValue(stu.Id);
+                        else if (node.Name.ToString().Equals("Name"))
+                            node.SetValue(stu.Name);
+                        else
+                            node.SetValue(stu.Age);
+                    }
+                    doc.Save("C://Students.xml");
+                    return Ok("Student successfully updated");
+
+                }
             }
-            return Ok(listOfStudents);
+            return BadRequest("Student does not exist!");
+
+            //Student selectedStudent = listOfStudents.Where(m => m.Id == stu.Id).SingleOrDefault();
+            //if (selectedStudent != null)
+            //{
+            //    selectedStudent.Name = stu.Name;
+            //    selectedStudent.Age = stu.Age;
+            //    //listOfMovies.Remove(selectedMovie);
+            //    //listOfMovies.Add();
+            //}
+            //return Ok(listOfStudents);
         }
 
         
@@ -71,8 +143,17 @@ namespace StudentSystem.Controllers
         //[HttpPost]
         public IHttpActionResult InsertData([FromBody]Student stu)
         {
-            listOfStudents.Add(stu);
+            XDocument doc = XDocument.Load("C://Students.xml");
+            doc.Root.Add(new XElement("Student",
+                    new XElement("Id", stu.Id),
+                    new XElement("Name", stu.Name),
+                    new XElement("Age", stu.Age)));
+            doc.Save("C://Students.xml");
+
             return Ok(listOfStudents);
+
+            //listOfStudents.Add(stu);
+            //return Ok(listOfStudents);
         }
     }
 }
